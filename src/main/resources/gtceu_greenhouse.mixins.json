@@ -7,6 +7,7 @@
   "mixins": [
   ],
   "client": [
+    "MultiVariantMixin"
   ],
   "injectors": {
     "defaultRequire": 1
