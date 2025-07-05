@@ -1,4 +1,4 @@
-# GTCEu Greenhouse
+# <img src="https://raw.githubusercontent.com/RubenVerg/GTCEu-Greenhouse/refs/heads/main/src/main/resources/logo.png" height="32px" alt="Logo"> GTCEu Greenhouse
 
 > **This mod does not add a greenhouse multibock**. It adds a system that allows you to create a greenhouse multiblock using KubeJS or Java.
 
@@ -48,6 +48,25 @@ GTCEuStartupEvents.registry('gtceu:machine', event => {
 ```
 
 ### Java
+
+First, add the JitPack repository:
+
+```gradle
+repositories {
+    // ...
+    maven { url 'https://jitpack.io' }
+}
+```
+
+Next, add a dependency to the project:
+
+```gradle
+dependencies {
+    // ...
+    
+    implementation fg.deobf("com.github.RubenVerg:GTCEu-Greenhouse:main-SNAPSHOT")
+}
+```
 
 There are two main exported classes which you will need: `GreenhouseMachineRenderer` and `SyncedProgressElectricMultiblockMachine`. When registering a multiblock, use the synced progress machine as the machine class and the renderer as a renderer. You will need to enable TESR.
 
