@@ -7,5 +7,6 @@ public enum GrowthMode {
 	DOUBLE_TRANSLATE,
 	AGE_3,
 	AGE_7,
-	TALL_FLOWER
+	TALL_FLOWER,
+	GROWING_PLANT
 }

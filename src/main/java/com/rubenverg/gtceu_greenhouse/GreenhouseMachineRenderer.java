@@ -85,11 +85,21 @@ public class GreenhouseMachineRenderer extends WorkableCasingMachineRenderer {
 							final var mode = growthModeForBlock(bi.getBlock());
 							var blockState = bi.getBlock().defaultBlockState();
 							if (mode == GrowthMode.AGE_7) {
-								blockState = blockState.trySetValue(BlockStateProperties.AGE_7, (int)(recipeProgress * (8 - 1e-10)));
+								blockState = blockState.trySetValue(BlockStateProperties.AGE_7, (int) (recipeProgress * (8 - 1e-25)));
 							} else if (mode == GrowthMode.AGE_3) {
-								blockState = blockState.trySetValue(BlockStateProperties.AGE_3, (int)(recipeProgress * (4 - 1e-10)));
+								blockState = blockState.trySetValue(BlockStateProperties.AGE_3, (int) (recipeProgress * (4 - 1e-25)));
 							} else if (mode == GrowthMode.TALL_FLOWER && recipeProgress < 0.5) {
 								blockState = blockState.trySetValue(DoublePlantBlock.HALF, DoublePlantBlock.HALF.getValue("upper").orElseThrow());
+							} else if (mode == GrowthMode.GROWING_PLANT) {
+								if (recipeProgress < 0.5) {
+									blockState = ((GrowingPlantBlock) blockState.getBlock()).getHeadBlock().defaultBlockState();
+									blockState = blockState.trySetValue(BlockStateProperties.AGE_25, (int) (recipeProgress * (25 - 1e-25)));
+								} else {
+									blockState = ((GrowingPlantBlock) blockState.getBlock()).getBodyBlock().defaultBlockState();
+								}
+								if (recipeProgress % 0.5 >= 0.25 && blockState.getBlock() instanceof CaveVines) {
+									blockState = blockState.trySetValue(CaveVines.BERRIES, true);
+								}
 							}
 							final var renderType = RenderTypeHelper.getEntityRenderType(ItemBlockRenderTypes.getRenderType(blockState, false), false);
 							final var consumer = buffer.getBuffer(renderType);
@@ -98,29 +108,41 @@ public class GreenhouseMachineRenderer extends WorkableCasingMachineRenderer {
 								final var rotated = vec.rotate(rotation);
 								stack.pushPose();
 								stack.translate(rotated.x, rotated.y, rotated.z);
-								stack.translate(0.0, 1e-10, 0.0);
+								stack.translate(0.0, 1e-25, 0.0);
 								if (mode == GrowthMode.TRANSLATE) {
 									stack.translate(0.0, recipeProgress - 1, 0.0);
-								} else if (mode == GrowthMode.TALL_FLOWER || mode == GrowthMode.DOUBLE_TRANSLATE) {
-									stack.translate(0.0, (recipeProgress * 2) % (1 + 1e-10) - 1, 0.0);
+								} else if (mode == GrowthMode.TALL_FLOWER || mode == GrowthMode.DOUBLE_TRANSLATE || mode == GrowthMode.GROWING_PLANT) {
+									stack.translate(0.0, (recipeProgress * 2) % (1 + 1e-25) - 1, 0.0);
 								} else if (mode == GrowthMode.SCALE) {
-									stack.last().pose().scaleAround((float)recipeProgress, 0.5f, 0.0f, 0.5f);
+									stack.last().pose().scaleAround((float) recipeProgress, 0.5f, 0.0f, 0.5f);
+								}
+								if (mode == GrowthMode.GROWING_PLANT && blockState.getBlock() instanceof GrowingPlantBlock gp) {
+									stack.last().pose().rotateAround(gp.growthDirection.getRotation(), 0.5f, 0.5f, 0.5f);
 								}
 								renderBlock(renderType, consumer, blockState, stack.last());
 								stack.popPose();
 							}
-							if ((mode == GrowthMode.TALL_FLOWER || mode == GrowthMode.DOUBLE_TRANSLATE) && recipeProgress >= 0.5) {
+							if ((mode == GrowthMode.TALL_FLOWER || mode == GrowthMode.DOUBLE_TRANSLATE || mode == GrowthMode.GROWING_PLANT) && recipeProgress > 0.5) {
 								var upperState = blockState;
 								if (mode == GrowthMode.TALL_FLOWER) {
 									upperState = blockState.trySetValue(DoublePlantBlock.HALF, DoublePlantBlock.HALF.getValue("upper").orElseThrow());
+								} else if (mode == GrowthMode.GROWING_PLANT) {
+									upperState = ((GrowingPlantBlock) blockState.getBlock()).getHeadBlock().defaultBlockState();
+									upperState = upperState.trySetValue(BlockStateProperties.AGE_25, (int) (recipeProgress * (25 - 1e-25)));
+									if (blockState.getBlock() instanceof CaveVines) {
+										upperState = upperState.trySetValue(CaveVines.BERRIES, true);
+									}
 								}
 								for (final var vec : getOffsets()) {
 									final var rotated = vec.rotate(rotation);
 									stack.pushPose();
 									stack.translate(rotated.x, rotated.y, rotated.z);
 									stack.translate(0.0, 1.0, 0.0);
-									stack.translate(0.0, 1e-10, 0.0);
-									stack.translate(0.0, (recipeProgress * 2) % (1 + 1e-10) - 1, 0.0);
+									stack.translate(0.0, 1e-25, 0.0);
+									stack.translate(0.0, (recipeProgress * 2) % (1 + 1e-25) - 1, 0.0);
+									if (mode == GrowthMode.GROWING_PLANT && blockState.getBlock() instanceof GrowingPlantBlock gp) {
+										stack.last().pose().rotateAround(gp.growthDirection.getRotation(), 0.5f, 0.5f, 0.5f);
+									}
 									renderBlock(renderType, consumer, upperState, stack.last());
 									stack.popPose();
 								}
@@ -159,6 +181,7 @@ public class GreenhouseMachineRenderer extends WorkableCasingMachineRenderer {
 		if (block instanceof SaplingBlock) return GrowthMode.SCALE;
 		if (block instanceof SugarCaneBlock || block instanceof CactusBlock) return GrowthMode.DOUBLE_TRANSLATE;
 		if (block instanceof SweetBerryBushBlock) return GrowthMode.AGE_3;
+		if (block instanceof GrowingPlantBlock) return GrowthMode.GROWING_PLANT;
 		return GrowthMode.NONE;
 	}
 }
